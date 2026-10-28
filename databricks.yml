@@ -1,0 +1,34 @@
+# Databricks Asset Bundle: .zip file ingestion (unzip -> Auto Loader -> AUTO CDC).
+# Deploys the schema, the two volumes, the Lakeflow pipeline and the job in one command:
+#   databricks bundle deploy -p <profile> --var="catalog=<your_catalog>"
+# See README.md for the full step-by-step guide.
+
+bundle:
+  name: auto_zip_ingestion
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Existing Unity Catalog catalog to deploy into (you need CREATE SCHEMA on it)
+  schema:
+    description: Schema to create for this solution
+    default: zip_ingest
+  key_column:
+    description: Business key column present in every CSV (one current row per key in silver)
+    default: id
+  max_workers:
+    description: Zip files extracted in parallel by the unzip task
+    default: "8"
+  trigger_status:
+    description: File-arrival trigger on the landing volume (PAUSED or UNPAUSED)
+    default: PAUSED
+
+targets:
+  dev:
+    default: true
+    # The workspace comes from the CLI profile (-p <profile>), so nothing to edit here.
+    # To pin it instead, uncomment and set:
+    # workspace:
+    #   host: https://<your-workspace>.cloud.databricks.com

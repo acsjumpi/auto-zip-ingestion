@@ -1,0 +1,27 @@
+# Schema + volumes. Delivered zip files go to `landing`; the unzip task writes CSVs to `staged`.
+resources:
+  schemas:
+    zip_ingest_schema:
+      catalog_name: ${var.catalog}
+      name: ${var.schema}
+      comment: .zip file ingestion (unzip -> Auto Loader -> AUTO CDC)
+      lifecycle:
+        prevent_destroy: true  # `bundle destroy` must not drop the schema and its data
+
+  volumes:
+    landing:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.zip_ingest_schema.name}
+      name: landing
+      volume_type: MANAGED
+      lifecycle:
+        prevent_destroy: true
+      comment: "Drop zone: <load_id>/<HIST|ADD|CHG|DEL>_NN.zip"
+    staged:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.zip_ingest_schema.name}
+      name: staged
+      volume_type: MANAGED
+      lifecycle:
+        prevent_destroy: true
+      comment: Extracted CSVs read by the pipeline (<load_id>/<type>/*.csv)

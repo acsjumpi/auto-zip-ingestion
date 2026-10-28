@@ -1,0 +1,15 @@
+resources:
+  pipelines:
+    zip_ingest_pipeline:
+      name: zip_ingest_pipeline
+      catalog: ${var.catalog}
+      schema: ${resources.schemas.zip_ingest_schema.name}
+      serverless: true
+      channel: CURRENT
+      root_path: ../src
+      libraries:
+        - glob:
+            include: ../src/transformations/**
+      configuration:
+        key_column: ${var.key_column}
+        staged_path: /Volumes/${var.catalog}/${resources.volumes.staged.schema_name}/${resources.volumes.staged.name}

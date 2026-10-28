@@ -1,0 +1,39 @@
+resources:
+  jobs:
+    zip_ingest:
+      name: zip_ingest
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      # Runs automatically when new zips land (5 min after the last file stops changing).
+      # Starts PAUSED; deploy with --var="trigger_status=UNPAUSED" to turn it on.
+      trigger:
+        pause_status: ${var.trigger_status}
+        file_arrival:
+          url: /Volumes/${var.catalog}/${resources.volumes.landing.schema_name}/${resources.volumes.landing.name}/
+          min_time_between_triggers_seconds: 300
+          wait_after_last_change_seconds: 300
+
+      parameters:
+        - name: load_ids
+          default: ""
+        - name: reprocess
+          default: ""
+
+      tasks:
+        - task_key: unzip_to_staging
+          notebook_task:
+            notebook_path: ../src/01_unzip_to_staging.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              max_workers: ${var.max_workers}
+              load_ids: "{{job.parameters.load_ids}}"
+              reprocess: "{{job.parameters.reprocess}}"
+
+        - task_key: ingest_pipeline
+          depends_on:
+            - task_key: unzip_to_staging
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.zip_ingest_pipeline.id}
